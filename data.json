@@ -1,0 +1,74 @@
+{
+  "machines": [
+    {
+      "name": "V1",
+      "supported_types": "4D,4G,4K,5D,5G,5K,5N,6D,6G,6K,6N,7K,7N,8K,8N",
+      "production_per_day": 4000
+    },
+    {
+      "name": "V2",
+      "supported_types": "4D,4G,4K,5D,5G,5K,5N,6D,6G,6K,6N,7G",
+      "production_per_day": 4000
+    },
+    {
+      "name": "V3",
+      "supported_types": "4G,4K,5G,5K,5N,6G,6K,6N,7K,7N,8K,8N",
+      "production_per_day": 4000
+    },
+    {
+      "name": "V4",
+      "supported_types": "5G,5K,5N,6G,6K,6N,8K,8N",
+      "production_per_day": 4000
+    },
+    {
+      "name": "V5",
+      "supported_types": "5G,5K,5N,6G,6K,6N,8K",
+      "production_per_day": 4000
+    },
+    {
+      "name": "V6",
+      "supported_types": "4A,5A,6A,7D",
+      "production_per_day": 4300
+    },
+    {
+      "name": "V7",
+      "supported_types": "4D,5G,5K,6D,6G",
+      "production_per_day": 4300
+    },
+    {
+      "name": "V8",
+      "supported_types": "4A,5A,5G,6A,6G,7D",
+      "production_per_day": 4300
+    },
+    {
+      "name": "V9",
+      "supported_types": "5D,5K,5N,6G,6K,8N",
+      "production_per_day": 4300
+    },
+    {
+      "name": "V10",
+      "supported_types": "4K,5K,6G,7K",
+      "production_per_day": 4300
+    },
+    {
+      "name": "V11",
+      "supported_types": "4K,5D,6N,7N",
+      "production_per_day": 4300
+    },
+    {
+      "name": "V12",
+      "supported_types": "4G,6G,7G",
+      "production_per_day": 4300
+    },
+    {
+      "name": "V13",
+      "supported_types": "4A,5A,6A,6G,7D",
+      "production_per_day": 4300
+    },
+    {
+      "name": "V14",
+      "supported_types": "6A,6G,6K,7K,7N,8N",
+      "production_per_day": 4300
+    }
+  ]
+}

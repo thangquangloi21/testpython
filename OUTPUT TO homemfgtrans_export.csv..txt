@@ -1,0 +1,6 @@
+OUTPUT TO "/home/mfg/trans_export.csv".
+PUT UNFORMATTED "item_number,Lot,location,tran_type,order,date,time,effdate,change_qty,inven_status" SKIP.
+FOR EACH tr_hist NO-LOCK WHERE tr_hist.tr_effdate = DATE("25/03/25"):
+PUT UNFORMATTED STRING(tr_hist.tr_part) + "," + STRING(tr_hist.tr_serial) + "," + STRING(tr_hist.tr_loc) + "," + STRING(tr_hist.tr_type) + "," + STRING(tr_hist.tr_nbr) + "," + STRING(tr_hist.tr_date) + "," + STRING(tr_hist.tr_time, "HH:MM:SS") + "," + STRING(tr_hist.tr_effdate, "99/99/99") + "," + STRING(tr_hist.tr_qty_chg) + "," + STRING(tr_hist.tr_status) SKIP.
+END.
+OUTPUT CLOSE.

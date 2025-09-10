@@ -1,0 +1,16 @@
+# bỏ qua thư mục
+venv_acc/
+__pycache_/
+temp/
+build/
+.venv_test_python/
+dist/
+logs/
+temp/
+uploads/
+
+# bỏ qua file có đuôi exe
+*.exe
+
+# bỏ qua file cụ thể
+gui.spec
