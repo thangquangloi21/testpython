@@ -64,7 +64,7 @@ def create_batches(df, tray,max_slpalet):
         current_sum = 0
 
         for item in remaining_items[:]:
-            if current_sum + item['slpalet'] <= (max_slpalet - 0.01):
+            if current_sum + item['slpalet'] <= max_slpalet:
                 current_batch.append(item)
                 current_sum += item['slpalet']
                 remaining_items.remove(item)
@@ -150,7 +150,7 @@ def chialo(merged_df):
                     'stt' : index,
                     'thitruong' : thitruong,
                     'mathanhpham': code,
-                    'some': i + 1,
+                    'solot': i + 1,
                     'soluong': max_lot_size,
                     'maukhuanbandau': mkbd,
                     'mauedotoxin': tinhmau(max_lot_size,mkbd,chietxuat,mautinhnang,meog,maukhac),
@@ -164,7 +164,7 @@ def chialo(merged_df):
                     'slpalet': round(round_up_to_divisible((max_lot_size + (mkbd + tinhmau(max_lot_size,mkbd,chietxuat,mautinhnang,meog,maukhac)+ chietxuat+ mautinhnang+meog+maukhac)), sltxx) / maxpalet,2),
                     'maxpalet/me': slmtt / maxpalet,
                     'quennong': quenong,
-                    'tilechiemdung': (round(round_up_to_divisible((max_lot_size + (mkbd + tinhmau(max_lot_size,mkbd,chietxuat,mautinhnang,meog,maukhac)+ chietxuat+ mautinhnang+meog+maukhac)), sltxx) / maxpalet,2) / (slmtt / maxpalet)) * 100
+                    'tilechiemdung': round((round(round_up_to_divisible((max_lot_size + (mkbd + tinhmau(max_lot_size,mkbd,chietxuat,mautinhnang,meog,maukhac)+ chietxuat+ mautinhnang+meog+maukhac)), sltxx) / maxpalet,2) / (slmtt / maxpalet)) * 100, 2)
                     
                 })
             
@@ -174,7 +174,7 @@ def chialo(merged_df):
                     'stt' : index,
                     'thitruong' : thitruong,
                     'mathanhpham': code,
-                    'some': full_lots + 1,
+                    'solot': full_lots + 1,
                     'soluong': remainder,
                     'maukhuanbandau': mkbd,
                     'mauedotoxin': tinhmau(remainder,mkbd,chietxuat,mautinhnang,meog,maukhac),
@@ -188,7 +188,7 @@ def chialo(merged_df):
                     'slpalet': round(round_up_to_divisible((remainder + (mkbd + tinhmau(remainder,mkbd,chietxuat,mautinhnang,meog,maukhac)+ chietxuat+ mautinhnang+meog+maukhac)), sltxx) / maxpalet,2),
                     'maxpalet/me': slmtt / maxpalet,
                     'quennong': quenong,
-                    'tilechiemdung': (round(round_up_to_divisible((remainder + (mkbd + tinhmau(remainder,mkbd,chietxuat,mautinhnang,meog,maukhac)+ chietxuat+ mautinhnang+meog+maukhac)), sltxx) / maxpalet,2) / (slmtt / maxpalet)) * 100
+                    'tilechiemdung': round((round(round_up_to_divisible((remainder + (mkbd + tinhmau(remainder,mkbd,chietxuat,mautinhnang,meog,maukhac)+ chietxuat+ mautinhnang+meog+maukhac)), sltxx) / maxpalet,2) / (slmtt / maxpalet)) * 100, 2)
                 })
         
         # Tạo DataFrame từ kết quả chia mẻ
@@ -203,213 +203,58 @@ def chialo(merged_df):
 
         # Lưu kết quả chia mẻ vào sheet Lot Splits
         with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-            df_lot_splits.to_excel(writer, sheet_name='Lot Splits', index=False)
-        print("\nĐã lưu kết quả chia mẻ vào sheet 'Lot Splits' trong file", file_path)
+            df_lot_splits.to_excel(writer, sheet_name='CHIALO', index=False)
+        print("\nĐã lưu kết quả chia mẻ vào sheet 'CHIALO' trong file", file_path)
         return df_lot_splits
 
 def gopme(df_lot_splits):
-    # # In kết quả
+    # # In kết chiame
     # print(result)
+    
     # Tách DataFrame thành 4 DataFrame dựa trên cột Tray
     df_tray_s = df_lot_splits[df_lot_splits['Tray'] == 'Tray S'].copy()
     df_tray_l = df_lot_splits[df_lot_splits['Tray'] == 'Tray L'].copy()
     df_pouch_s = df_lot_splits[df_lot_splits['Tray'] == 'Pouch S'].copy()
     df_pouch_l = df_lot_splits[df_lot_splits['Tray'] == 'Pouch L'].copy()
 
+    # GÉP MẺ THEO CÁC TRAY VÀ ĐÁNH NHÃN
     mett = chiame_df_tray_l(df_tray_s,df_tray_l,df_pouch_s,df_pouch_l)
+    
+    with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        mett.to_excel(writer, sheet_name='GEPME1', index=False)
+    print("\nĐã lưu kết quả chia mẻ vào sheet 'GEPME' trong file", file_path)
+    
     
     tinhmett = mett[mett['Batch_Total'] < 4.90].copy()
     tinhmett2 = mett[mett['Batch_Total'] > 4.90].copy()
+    
+    tinhmett['slpalet1'] = tinhmett['slpalet']
+    print(tinhmett)
+    tinhmett['slpalet'] = tinhmett['slpalet'].apply(np.ceil)
+    # GỘP CÁC MẺ DƯỚI 5 PALET
     cuoicung = create_batches(tinhmett,"gop", 7)
+    
+    cuoicung = cuoicung.drop(columns=['slpalet'])
+    
+    cuoicung['slpalet'] = cuoicung['slpalet1']
+    
+    cuoicung = cuoicung.drop(columns=['slpalet1'])
+    
     
     # gộp df
     dfs = [tinhmett2,cuoicung]
     df_combined = pd.concat(dfs, ignore_index=True)
     df_combined['Batch_ID_encoded'] = pd.factorize(df_combined['Batch_ID'])[0]
-    # df_pouchs1 = create_batches(tinhmett, "end",7)
-#  # Lưu kết quả chia mẻ vào sheet Lot Splits
-#     with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-#         cuoicung.to_excel(writer, sheet_name='meconlai', index=False)
-#     print("\nĐã lưu kết quả chia mẻ vào sheet 'meconlai' trong file", file_path)
-    # Lưu kết quả chia mẻ vào sheet chiame
+
+
     with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        df_combined.to_excel(writer, sheet_name='chiame', index=False)
-    print("\nĐã lưu kết quả chia mẻ vào sheet 'chiame' trong file", file_path)
+        df_combined.to_excel(writer, sheet_name='GEPME', index=False)
+    print("\nĐã lưu kết quả chia mẻ vào sheet 'GEPME' trong file", file_path)
     
+
+
 
 data1 = read_excel_to_df(file_path)
 data2  = chialo(data1)
 gopme(data2)
-
-# try:
-    # # Đọc sheet 'TEMP', từ hàng 4 (header ở index 3), cột A đến D
-    # df_temp = pd.read_excel(file_path, sheet_name='TEMP', header=3, usecols='A:I')
-    
-    # # Hiển thị dữ liệu từ sheet TEMP
-    # if not df_temp.empty:
-    #     print("Dữ liệu từ sheet TEMP (từ A4 đến D4 và các hàng tiếp theo):")
-    #     print(df_temp.head())
-    #     print("\nTên cột của TEMP:", df_temp.columns.tolist())
-    # else:
-    #     print("Không có dữ liệu trong sheet TEMP.")
-
-    # # Đọc sheet 'MASTER', từ hàng 1 (header ở index 0), cột A đến G
-    # df_master = pd.read_excel(file_path, sheet_name='MASTER', header=0, usecols='A:I')
-    
-    # # Hiển thị dữ liệu từ sheet MASTER
-    # if not df_master.empty:
-    #     print("\nDữ liệu từ sheet MASTER (từ A1 đến G1 và các hàng tiếp theo):")
-    #     print(df_master.head())
-    #     print("\nTên cột của MASTER:", df_master.columns.tolist())
-    # else:
-    #     print("Không có dữ liệu trong sheet MASTER.")
-
-    # merged_df = pd.merge(
-    # df_temp,
-    # df_master,
-    # how='left',
-    # left_on=['X2', 'X9'],
-    # right_on=['Chủng loại', 'Thị Trường'])
-
-
-    # # Hiển thị dữ liệu sau khi gộp
-    # if not merged_df.empty:
-    #     print("\nDữ liệu sau khi gộp (left join dựa trên cột B):")
-    #     print(merged_df.head())
-    # else:
-    #     print("\nKhông có dữ liệu sau khi gộp.")
-    
-    # # Lưu kết quả chia mẻ vào sheet Lot Splits
-    # with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-    #     merged_df.to_excel(writer, sheet_name='megedf', index=False)
-    # print("\nĐã lưu dữ liệu gộp vào sheet 'megedf' trong file", file_path)
-
-    # Kiểm tra và chuẩn bị dữ liệu cho sheet Lot Splits
-    # df_plan = merged_df.copy()
-    # # Chia mẻ theo cỡ lô max + tính mẫu
-    # lot_splits = []
-    # for _, row in df_plan.iterrows():
-    #     index = row['X1']
-    #     thitruong = row['X9']
-    #     code = row['X2']
-    #     total_qty = int(row['X3'])
-    #     max_lot_size = int(row['Cỡ lô Max'])
-    #     tray = row['Tray']
-    #     mkbd = row['X5']
-    #     chietxuat = row['X6']
-    #     mautinhnang = row['Mẫu tính năng']
-    #     meog = row['X7']
-    #     maukhac = row['X8']
-    #     maxpalet = row['Số lượng/pallet']  
-    #     maxmett = row['Số lượng/mẻ TT']
-    #     sltxx = row['Số lượng/TXX']
-    #     quenong = row['Que nong']
-    #     slmtt = row['Số lượng/mẻ TT']
-    #     # Tính số mẻ đầy đủ và số lượng còn lại
-    #     full_lots = total_qty // max_lot_size
-    #     remainder = total_qty % max_lot_size
-        
-    #     # Thêm các mẻ đầy đủ
-    #     for i in range(full_lots):
-    #         lot_splits.append({
-    #             'stt' : index,
-    #             'thitruong' : thitruong,
-    #             'mathanhpham': code,
-    #             'some': i + 1,
-    #             'soluong': max_lot_size,
-    #             'maukhuanbandau': mkbd,
-    #             'mauedotoxin': tinhmau(max_lot_size,mkbd,chietxuat,mautinhnang,meog,maukhac),
-    #             'mauchietxuat': chietxuat,
-    #             'mautinhnang': mautinhnang,
-    #             'maueog': meog,
-    #             'maukhac': maukhac,
-    #             'Tray': tray,
-    #             'tongmau': mkbd + tinhmau(max_lot_size,mkbd,chietxuat,mautinhnang,meog,maukhac)+ chietxuat+ mautinhnang+meog+maukhac,
-    #             'tongsanxuat': max_lot_size + (mkbd + tinhmau(max_lot_size,mkbd,chietxuat,mautinhnang,meog,maukhac)+ chietxuat+ mautinhnang+meog+maukhac),
-    #             'slpalet': round(round_up_to_divisible((max_lot_size + (mkbd + tinhmau(max_lot_size,mkbd,chietxuat,mautinhnang,meog,maukhac)+ chietxuat+ mautinhnang+meog+maukhac)), sltxx) / maxpalet,2),
-    #             'maxpalet/me': slmtt / maxpalet,
-    #             'quennong': quenong
-                
-    #         })
-        
-    #     # Thêm mẻ còn lại (nếu có)
-    #     if remainder > 0:
-    #         lot_splits.append({
-    #             'stt' : index,
-    #             'thitruong' : thitruong,
-    #             'mathanhpham': code,
-    #             'some': full_lots + 1,
-    #             'soluong': remainder,
-    #             'maukhuanbandau': mkbd,
-    #             'mauedotoxin': tinhmau(remainder,mkbd,chietxuat,mautinhnang,meog,maukhac),
-    #             'mauchietxuat': chietxuat,
-    #             'mautinhnang': mautinhnang,
-    #             'maueog': meog,
-    #             'maukhac': maukhac,
-    #             'Tray': tray,
-    #             'tongmau': mkbd + tinhmau(remainder,mkbd,chietxuat,mautinhnang,meog,maukhac)+ chietxuat+ mautinhnang+meog+maukhac,
-    #             'tongsanxuat': remainder + (mkbd + tinhmau(remainder,mkbd,chietxuat,mautinhnang,meog,maukhac)+ chietxuat+ mautinhnang+meog+maukhac),
-    #             'slpalet': round(round_up_to_divisible((remainder + (mkbd + tinhmau(remainder,mkbd,chietxuat,mautinhnang,meog,maukhac)+ chietxuat+ mautinhnang+meog+maukhac)), sltxx) / maxpalet,2),
-    #             'maxpalet/me': slmtt / maxpalet,
-    #             'quennong': quenong
-    #         })
-    
-    # # Tạo DataFrame từ kết quả chia mẻ
-    # df_lot_splits = pd.DataFrame(lot_splits)
-    
-    # # Hiển thị kết quả chia mẻ
-    # if not df_lot_splits.empty:
-    #     print("\nKết quả chia mẻ theo cỡ lô max:")
-    #     print(df_lot_splits)
-    # else:
-    #     print("\nKhông có mẻ nào được chia.")
-
-    # # Lưu kết quả chia mẻ vào sheet Lot Splits
-    # with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-    #     df_lot_splits.to_excel(writer, sheet_name='Lot Splits', index=False)
-    # print("\nĐã lưu kết quả chia mẻ vào sheet 'Lot Splits' trong file", file_path)
-
-    # gepmett = []
-    # for _, row in df_lot_splits.iterrows():
-    #     print(row)
-    #     slpalet = row['slpalet']
-    #     if slpalet <= 6.98:
-    #         ...
-                
-            
-    #   # Xử lý và lưu kết quả
-    # result = process_and_save_batches(df_lot_splits, file_path)
-    
-#     # # In kết quả
-#     # print(result)
-#     # Tách DataFrame thành 4 DataFrame dựa trên cột Tray
-#     df_tray_s = df_lot_splits[df_lot_splits['Tray'] == 'Tray S'].copy()
-#     df_tray_l = df_lot_splits[df_lot_splits['Tray'] == 'Tray L'].copy()
-#     df_pouch_s = df_lot_splits[df_lot_splits['Tray'] == 'Pouch S'].copy()
-#     df_pouch_l = df_lot_splits[df_lot_splits['Tray'] == 'Pouch L'].copy()
-
-#     mett = chiame_df_tray_l(df_tray_s,df_tray_l,df_pouch_s,df_pouch_l)
-    
-#     tinhmett = mett[mett['Batch_Total'] < 4.90].copy()
-#     tinhmett2 = mett[mett['Batch_Total'] > 4.90].copy()
-#     cuoicung = create_batches(tinhmett,"gop", 7)
-    
-#     # gộp df
-#     dfs = [tinhmett2,cuoicung]
-#     df_combined = pd.concat(dfs, ignore_index=True)
-#     df_combined['Batch_ID_encoded'] = pd.factorize(df_combined['Batch_ID'])[0]
-#     # df_pouchs1 = create_batches(tinhmett, "end",7)
-# #  # Lưu kết quả chia mẻ vào sheet Lot Splits
-# #     with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-# #         cuoicung.to_excel(writer, sheet_name='meconlai', index=False)
-# #     print("\nĐã lưu kết quả chia mẻ vào sheet 'meconlai' trong file", file_path)
-#     # Lưu kết quả chia mẻ vào sheet chiame
-#     with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-#         df_combined.to_excel(writer, sheet_name='chiame', index=False)
-#     print("\nĐã lưu kết quả chia mẻ vào sheet 'chiame' trong file", file_path)
-    
-# except FileNotFoundError:
-#     print("File Excel không tồn tại. Vui lòng kiểm tra đường dẫn.")
-# except Exception as e:
-#     print(f"Có lỗi xảy ra: {e}")
 

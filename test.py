@@ -1,21 +1,24 @@
 import pandas as pd
-import numpy as np
-file_path1=r"Z:\pod_det_export.csv"
-file_path2=r"Z:\po_mstr_export.csv"
 
-df1 = pd.read_csv(file_path1)
-df2 = pd.read_csv(file_path2)
-# đọc 2 file csv bằng pandas trên rồi mege với nhau thành 1 df
-merged_df = pd.merge(df1, df2, on='Purchase Order', how='inner')
-# cộng cột Receipt Qty
-merged_df['Open Qty'] = np.where(
-    (merged_df['Status'] != 'X') & (merged_df['Status'] != 'C'),  # Điều kiện
-    merged_df['Order Qty'] - merged_df['Receipt Qty'],               # Nếu đúng, trừ hai cột
-    0 # Nếu sai, trả về 0
-)
+# Dữ liệu mẫu
+data = {
+    'a': [5, 5, 7, 7, 5, 3, 7,7],
+    'B': [50, 65, 75, 55, 70, 45, 80,4]
+}
+df = pd.DataFrame(data)
+print("Dữ liệu gốc:")
+print(df)
 
-# tạo cột PO Ord Amt
-merged_df["PO Ord Amt"] = merged_df["PO Ord Cost"] * merged_df["Order Qty"]
+# Tách dữ liệu theo các điều kiện
+results = {}
+conditions = {
+    5: df[(df['a'] == 5) & (df['B'] > 60)],
+    7: df[(df['a'] == 7) & (df['B'] > 70)]
+}
 
-print(merged_df.head())
-merged_df.to_csv('output.csv',index=False)
+
+# Hiển thị kết quả
+for value, result_df in conditions.items():
+    # print(f"\nDữ liệu khi a == {value} và B > {60 if value == 5 else 70}:")
+    print("sau khi lọc")
+    print(result_df)
