@@ -224,21 +224,34 @@ def gopme(df_lot_splits):
         mett.to_excel(writer, sheet_name='GEPME1', index=False)
     print("\nĐã lưu kết quả chia mẻ vào sheet 'GEPME' trong file", file_path)
     
+    mett['tilegepme'] = round((mett['Batch_Total'] / mett['maxpalet/me']) * 100 ,2)
     
-    tinhmett = mett[mett['Batch_Total'] < 4.90].copy()
-    tinhmett2 = mett[mett['Batch_Total'] > 4.90].copy()
+    # Tách df1: maxpalet/me = 5 và tilegepme < 79.9, hoặc maxpalet/me = 7 và tilegepme <= 85.5
+    condition_df1 = ((mett['maxpalet/me'] == 5) & (mett['tilegepme'] < 79.9)) | ((mett['maxpalet/me'] == 7) & (mett['tilegepme'] <= 85.5))
     
-    tinhmett['slpalet1'] = tinhmett['slpalet']
-    print(tinhmett)
-    tinhmett['slpalet'] = tinhmett['slpalet'].apply(np.ceil)
+    tinhmett = mett[condition_df1].copy()
+    tinhmett['group'] = 'group_1'  # Thêm nhãn nhóm (tùy chọn)
+
+    # Tách df2: các hàng không thỏa mãn điều kiện của df1
+    tinhmett2 = mett[~condition_df1].copy()
+    tinhmett2['group'] = 'group_2'  # Thêm nhãn nhóm (tùy chọn)
+    
+    
+    # tinhmett = mett[mett['Batch_Total'] < 4.90].copy()
+    # tinhmett2 = mett[mett['Batch_Total'] > 4.90].copy()
+    
+    # tinhmett['slpalet1'] = tinhmett['slpalet']
+    # print(tinhmett)
+    # tinhmett['slpalet'] = tinhmett['slpalet'].apply(np.ceil)
     # GỘP CÁC MẺ DƯỚI 5 PALET
+    
     cuoicung = create_batches(tinhmett,"gop", 7)
     
-    cuoicung = cuoicung.drop(columns=['slpalet'])
+    # cuoicung = cuoicung.drop(columns=['slpalet'])
     
-    cuoicung['slpalet'] = cuoicung['slpalet1']
+    # cuoicung['slpalet'] = cuoicung['slpalet1']
     
-    cuoicung = cuoicung.drop(columns=['slpalet1'])
+    # cuoicung = cuoicung.drop(columns=['slpalet1'])
     
     
     # gộp df
