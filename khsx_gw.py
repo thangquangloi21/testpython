@@ -133,6 +133,7 @@ def read_excel_to_df(file_path):
 def chialo(merged_df):
          # Kiểm tra và chuẩn bị dữ liệu cho sheet Lot Splits
         df_plan = merged_df.copy()
+
         # Chia mẻ theo cỡ lô max + tính mẫu
         lot_splits = []
         for _, row in df_plan.iterrows():
@@ -149,11 +150,13 @@ def chialo(merged_df):
             maukbd = row['X7']
             maueog = row['X8']
             maukhac = row['X9']
+            maxmett = row['Y2']
             mautinhnang = row['Y3']
             mauchietxuat = row['Y4']
             maunhatban = row['Y5']
             mauluutvc = row['Y6']
             print(chungloai)
+
             # Tính số mẻ đầy đủ và số lượng còn lại
             full_lots = total_qty // max_lot_size
             remainder = total_qty % max_lot_size
@@ -170,6 +173,7 @@ def chialo(merged_df):
                     'chungloai': chungloai,
                     'soluonglot': max_lot_size,
                     'tongsoluongsx': total_qty,
+                    'maxmett'   : maxmett,
                     'date': date,
                     'passrm': pass_rm,
                     'maukbd': maukbd,
@@ -212,6 +216,7 @@ def chialo(merged_df):
                     'chungloai': chungloai,
                     'soluonglot': remainder,
                     'tongsoluongsx': total_qty,
+                    'maxmett'   : maxmett,
                     'date': date,
                     'passrm': pass_rm,
                     'maukbd': maukbd,
@@ -257,8 +262,8 @@ def chialo(merged_df):
 
         # Lưu kết quả chia mẻ vào sheet Lot Splits
         with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-            df_lot_splits.to_excel(writer, sheet_name='Lot Splits', index=False)
-        print("\nĐã lưu kết quả chia mẻ vào sheet 'Lot Splits' trong file", file_path)
+            df_lot_splits.to_excel(writer, sheet_name='CHIA LÔ', index=False)
+        print("\nĐã lưu kết quả chia mẻ vào sheet 'CHIA LÔ' trong file", file_path)
         return df_lot_splits
 
 
