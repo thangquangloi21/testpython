@@ -57,18 +57,21 @@ def create_batches(df, tray,max_slpalet):
     Returns:
         pd.DataFrame: DataFrame ban đầu với thêm cột 'Batch_ID' và 'Batch_Total'
     """
+
+
     batches = []
     batch_id = 1
-    remaining_items = df.sort_values(by='slpalet', ascending=False).to_dict('records')
+    remaining_items = df.sort_values(by='tongsanxuat', ascending=False).to_dict('records')
+    
 
     while remaining_items:
         current_batch = []
         current_sum = 0
 
         for item in remaining_items[:]:
-            if current_sum + item['slpalet'] <= (max_slpalet - 0.01):
+            if current_sum + item['soluonglot'] <= (max_slpalet):
                 current_batch.append(item)
-                current_sum += item['slpalet']
+                current_sum += item['soluonglot']
                 remaining_items.remove(item)
 
         if current_batch:
@@ -229,6 +232,7 @@ def chialo(merged_df):
                     'mauedotoxin': tinhmau(remainder,maukbd,mauchietxuat,mautinhnang,maueog,maukhac),
                     'tongmau': tinhmau(remainder,maukbd,mauchietxuat,mautinhnang,maueog,maukhac) + maukbd + maueog + maukhac + mautinhnang + mauchietxuat + maunhatban + mauluutvc,
                     'tongsanxuat': remainder + (tinhmau(remainder,maukbd,mauchietxuat,mautinhnang,maueog,maukhac) + maukbd + maueog + maukhac + mautinhnang + mauchietxuat + maunhatban + mauluutvc)
+
                     
                     # 'stt' : index,
                     # 'thitruong' : thitruong,
@@ -252,7 +256,9 @@ def chialo(merged_df):
         
         # Tạo DataFrame từ kết quả chia mẻ
         df_lot_splits = pd.DataFrame(lot_splits)
-        
+        df_lot_splits["INDEX"] = range(1, len(df_lot_splits) + 1)
+        df_lot_splits['lot_id'] = df_lot_splits['INDEX'].astype(str) + df_lot_splits['stt'].astype(str) + df_lot_splits['solot'].astype(str)
+
         # Hiển thị kết quả chia mẻ
         if not df_lot_splits.empty:
             print("\nKết quả chia mẻ theo cỡ lô max:")
@@ -266,37 +272,49 @@ def chialo(merged_df):
         print("\nĐã lưu kết quả chia mẻ vào sheet 'CHIA LÔ' trong file", file_path)
         return df_lot_splits
 
-
-
+def geme_theodata(df_lot_splits):
+    ...
 
 def gopme(df_lot_splits):
     # # In kết quả
-    # print(result)
-    # Tách DataFrame thành 4 DataFrame dựa trên cột Tray
-    df_tray_s = df_lot_splits[df_lot_splits['Tray'] == 'Tray S'].copy()
-    df_tray_l = df_lot_splits[df_lot_splits['Tray'] == 'Tray L'].copy()
-    df_pouch_s = df_lot_splits[df_lot_splits['Tray'] == 'Pouch S'].copy()
-    df_pouch_l = df_lot_splits[df_lot_splits['Tray'] == 'Pouch L'].copy()
+    # tách mẫu ra khỏi sl sản xuất
+    data_sample = df_lot_splits[['lot_id', 'mathanhpham' , 'tongmau']]
+    #  tách theo chủng loại
+    df_gen_d = df_lot_splits[df_lot_splits["chungloai"] == "D"]
+    df_gen_N = df_lot_splits[df_lot_splits["chungloai"] == "N"]
+    #  gộp mẻ theo chủng loại
+    gop_dai = create_batches(df_gen_d, "D", 13800)
+    gop_ngan = create_batches(df_gen_N, "N", 27500)
 
-    mett = chiame_df_tray_l(df_tray_s,df_tray_l,df_pouch_s,df_pouch_l)
-    
-    tinhmett = mett[mett['Batch_Total'] < 4.90].copy()
-    tinhmett2 = mett[mett['Batch_Total'] > 4.90].copy()
-    cuoicung = create_batches(tinhmett,"gop", 7)
-    
     # gộp df
-    dfs = [tinhmett2,cuoicung]
+    dfs = [gop_dai, gop_ngan]   
+
+#     # print(result)
+#     # Tách DataFrame thành 4 DataFrame dựa trên cột Tray
+#     df_tray_s = df_lot_splits[df_lot_splits['Tray'] == 'Tray S'].copy()
+#     df_tray_l = df_lot_splits[df_lot_splits['Tray'] == 'Tray L'].copy()
+#     df_pouch_s = df_lot_splits[df_lot_splits['Tray'] == 'Pouch S'].copy()
+#     df_pouch_l = df_lot_splits[df_lot_splits['Tray'] == 'Pouch L'].copy()
+
+#     mett = chiame_df_tray_l(df_tray_s,df_tray_l,df_pouch_s,df_pouch_l)
+    
+#     tinhmett = mett[mett['Batch_Total'] < 4.90].copy()
+#     tinhmett2 = mett[mett['Batch_Total'] > 4.90].copy()
+#     cuoicung = create_batches(tinhmett,"gop", 7)
+    
+#     # gộp df
+#     dfs = [tinhmett2,cuoicung]
     df_combined = pd.concat(dfs, ignore_index=True)
-    df_combined['Batch_ID_encoded'] = pd.factorize(df_combined['Batch_ID'])[0]
-    # df_pouchs1 = create_batches(tinhmett, "end",7)
-#  # Lưu kết quả chia mẻ vào sheet Lot Splits
-#     with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-#         cuoicung.to_excel(writer, sheet_name='meconlai', index=False)
-#     print("\nĐã lưu kết quả chia mẻ vào sheet 'meconlai' trong file", file_path)
+#     df_combined['Batch_ID_encoded'] = pd.factorize(df_combined['Batch_ID'])[0]
+#     # df_pouchs1 = create_batches(tinhmett, "end",7)
+# #  # Lưu kết quả chia mẻ vào sheet Lot Splits
+# #     with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+# #         cuoicung.to_excel(writer, sheet_name='meconlai', index=False)
+# #     print("\nĐã lưu kết quả chia mẻ vào sheet 'meconlai' trong file", file_path)
     # Lưu kết quả chia mẻ vào sheet chiame
     with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        df_combined.to_excel(writer, sheet_name='chiame', index=False)
-    print("\nĐã lưu kết quả chia mẻ vào sheet 'chiame' trong file", file_path)
+        df_combined.to_excel(writer, sheet_name='gepme', index=False)
+    print("\nĐã lưu kết quả chia mẻ vào sheet 'gepme' trong file", file_path)
     
 
 
@@ -304,5 +322,5 @@ def gopme(df_lot_splits):
 
 data1 = read_excel_to_df(file_path)
 data2  = chialo(data1)
-# gopme(data2)
+gopme(data2)
 
