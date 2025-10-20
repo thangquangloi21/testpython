@@ -99,7 +99,7 @@ def read_excel_to_df(file_path):
 
 
     # Đọc sheet 'MASTER', từ hàng 1 (header ở index 0), cột A đến G
-    df_master = pd.read_excel(file_path, sheet_name='MASTER_GW', header=1, usecols='A:H')
+    df_master = pd.read_excel(file_path, sheet_name='MASTER_GW', header=1, usecols='A:I')
     
     # Hiển thị dữ liệu từ sheet MASTER
     if not df_master.empty:
@@ -158,6 +158,7 @@ def chialo(merged_df):
             mauchietxuat = row['Y4']
             maunhatban = row['Y5']
             mauluutvc = row['Y6']
+            maxpalet = row['Y7']
             print(chungloai)
 
             # Tính số mẻ đầy đủ và số lượng còn lại
@@ -176,6 +177,7 @@ def chialo(merged_df):
                     'soluonglot': max_lot_size,
                     'tongsoluongsx': total_qty,
                     'maxmett'   : maxmett,
+                    'maxpalet'   : maxpalet,
                     'maukbd': maukbd,
                     'maueog': maueog,
                     'maukhac': maukhac,
@@ -216,6 +218,7 @@ def chialo(merged_df):
                     'maxlot': max_lot_size,
                     'tongsoluongsx': total_qty,
                     'maxmett'   : maxmett,
+                    'maxpalet'   : maxpalet,
                     'maukbd': maukbd,
                     'maueog': maueog,
                     'maukhac': maukhac,
@@ -252,6 +255,8 @@ def chialo(merged_df):
         df_lot_splits = pd.DataFrame(lot_splits)
         df_lot_splits["INDEX"] = range(1, len(df_lot_splits) + 1)
         df_lot_splits['lot_id'] = df_lot_splits['INDEX'].astype(str) + df_lot_splits['stt'].astype(str) + df_lot_splits['solot'].astype(str)
+        df_lot_splits['chiempalett'] = round(df_lot_splits['tongsanxuat'] / df_lot_splits['maxpalet'],2)
+        
 
         # Hiển thị kết quả chia mẻ
         if not df_lot_splits.empty:
@@ -311,11 +316,29 @@ def gopme(df_lot_splits):
     print("\nĐã lưu kết quả chia mẻ vào sheet 'gepme' trong file", file_path)
     
 
+
+# Đọc dữ liệu từ file Excel
 data1 = read_excel_to_df(file_path)
-data2  = chialo(data1)
+# lấy những mã không cần chia lô ra:
+khongchialo = data1[data1['X4'] < data1['Y1']].copy()
+phaichialo = data1[data1['X4'] >  data1['Y1']].copy()
+
+
+ # Lưu kết quả chia mẻ vào sheet khongchialo
+with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+    khongchialo.to_excel(writer, sheet_name='khongchialo', index=False)
+
+# những item cần chia lô:
+
+ # Lưu kết quả chia mẻ vào sheet khongchialo
+with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+    phaichialo.to_excel(writer, sheet_name='canchialo', index=False)
 
 
 
+
+
+data2  = chialo(phaichialo)
 # tách mẫu ra khỏi mẻ:
-gopme(data2)
+# gopme(data2)
 
