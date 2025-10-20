@@ -87,7 +87,7 @@ def create_batches(df, tray,max_slpalet):
 
 def read_excel_to_df(file_path):
      # Đọc sheet 'TEMP', từ hàng 4 (header ở index 3), cột A đến D
-    df_temp = pd.read_excel(file_path, sheet_name='INPUT1', header=1, usecols='A:K')
+    df_temp = pd.read_excel(file_path, sheet_name='INPUT1', header=1, usecols='A:G')
     
     # Hiển thị dữ liệu từ sheet TEMP
     if not df_temp.empty:
@@ -143,10 +143,10 @@ def chialo(merged_df):
             index = row['X']
             thitruong = row['X0']
             code = row['X1']
-            btp = row['X2']
-            rm = row['X3']
-            date = row['X5']
-            pass_rm = row['X6']
+            # btp = row['X2']
+            # rm = row['X3']
+            # date = row['X5']
+            # pass_rm = row['X6']
             total_qty = int(row['X4'])
             max_lot_size = int(row['Y1'])
             chungloai = row['Y0']
@@ -171,14 +171,11 @@ def chialo(merged_df):
                     'solot': i,
                     'thitruong' : thitruong,
                     'mathanhpham': code,
-                    'mabtp ': btp,
-                    'daydan ': rm,
                     'chungloai': chungloai,
+                    'maxlot': max_lot_size,
                     'soluonglot': max_lot_size,
                     'tongsoluongsx': total_qty,
                     'maxmett'   : maxmett,
-                    'date': date,
-                    'passrm': pass_rm,
                     'maukbd': maukbd,
                     'maueog': maueog,
                     'maukhac': maukhac,
@@ -214,14 +211,11 @@ def chialo(merged_df):
                     'solot': i + 1,
                     'thitruong' : thitruong,
                     'mathanhpham': code,
-                    'mabtp ': btp,
-                    'daydan ': rm,
                     'chungloai': chungloai,
                     'soluonglot': remainder,
+                    'maxlot': max_lot_size,
                     'tongsoluongsx': total_qty,
                     'maxmett'   : maxmett,
-                    'date': date,
-                    'passrm': pass_rm,
                     'maukbd': maukbd,
                     'maueog': maueog,
                     'maukhac': maukhac,
@@ -317,10 +311,11 @@ def gopme(df_lot_splits):
     print("\nĐã lưu kết quả chia mẻ vào sheet 'gepme' trong file", file_path)
     
 
-
-
-
 data1 = read_excel_to_df(file_path)
 data2  = chialo(data1)
+
+
+
+# tách mẫu ra khỏi mẻ:
 gopme(data2)
 
