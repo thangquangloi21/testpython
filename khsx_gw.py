@@ -7,7 +7,7 @@ from itertools import combinations
 file_path = 'Master_GW.xlsx'  # Cập nhật nếu file ở nơi khác, ví dụ: r'D:\4.DEV\TEST_python\MasterIK.xlsx'
 
 # tính mẫu:
-def tinhmau(max_lot_size,mkbd,chietxuat,mautinhnang,meog,maukhac):
+def tinhmau_edotoxin(max_lot_size,mkbd,chietxuat,mautinhnang,meog,maukhac):
     # Tổng các ô
     total = max_lot_size + mkbd + chietxuat + mautinhnang + meog + maukhac
     # print(maukhac)
@@ -148,11 +148,11 @@ def chialo(merged_df):
             # date = row['X5']
             # pass_rm = row['X6']
             total_qty = int(row['X4'])
-            max_lot_size = int(row['Y1'])
-            chungloai = row['Y0']
             maukbd = row['X7']
             maueog = row['X8']
             maukhac = row['X9']
+            chungloai = row['Y0']
+            max_lot_size = int(row['Y1'])
             maxmett = row['Y2']
             mautinhnang = row['Y3']
             mauchietxuat = row['Y4']
@@ -168,26 +168,27 @@ def chialo(merged_df):
             # Thêm các mẻ đầy đủ
             for i in range(full_lots):
                 lot_splits.append({
-                    'stt' : index,
+                    'X' : index,
+                    'X0' : thitruong,
+                    'X1': code,
+                    'X4': max_lot_size,
+                    'X7': maukbd,
+                    'X8': maueog,
+                    'X9': maukhac,
+                    'Y0': chungloai,
+                    'Y1': max_lot_size,
+                    'Y2'   : maxmett,
+                    'Y3': mautinhnang,
+                    'Y4': mauchietxuat,
+                    'Y5': maunhatban,
+                    'Y6': mauluutvc,
+                    'Y7'   : maxpalet,
                     'solot': i,
-                    'thitruong' : thitruong,
-                    'mathanhpham': code,
-                    'chungloai': chungloai,
-                    'maxlot': max_lot_size,
-                    'soluonglot': max_lot_size,
-                    'tongsoluongsx': total_qty,
-                    'maxmett'   : maxmett,
-                    'maxpalet'   : maxpalet,
-                    'maukbd': maukbd,
-                    'maueog': maueog,
-                    'maukhac': maukhac,
-                    'mautinhnang': mautinhnang,
-                    'mauchietxuat': mauchietxuat,
-                    'maunhatban': maunhatban,
-                    'mauluutvc': mauluutvc,
-                    'mauedotoxin': tinhmau(max_lot_size,maukbd,mauchietxuat,mautinhnang,maueog,maukhac),
-                    'tongmau': tinhmau(max_lot_size,maukbd,mauchietxuat,mautinhnang,maueog,maukhac) + maukbd + maueog + maukhac + mautinhnang + mauchietxuat + maunhatban + mauluutvc   ,      
-                    'tongsanxuat': max_lot_size + (tinhmau(max_lot_size,maukbd,mauchietxuat,mautinhnang,maueog,maukhac) + maukbd + maueog + maukhac + mautinhnang + mauchietxuat + maunhatban + mauluutvc)
+                    'tongsx': total_qty
+                    
+                    # 'mauedotoxin': tinhmau(max_lot_size,maukbd,mauchietxuat,mautinhnang,maueog,maukhac),
+                    # 'tongmau': tinhmau(max_lot_size,maukbd,mauchietxuat,mautinhnang,maueog,maukhac) + maukbd + maueog + maukhac + mautinhnang + mauchietxuat + maunhatban + mauluutvc   ,      
+                    # 'tongsanxuat': max_lot_size + (tinhmau(max_lot_size,maukbd,mauchietxuat,mautinhnang,maueog,maukhac) + maukbd + maueog + maukhac + mautinhnang + mauchietxuat + maunhatban + mauluutvc)
 
                     # 'some': i + 1,
                     # 'soluong': max_lot_size,
@@ -209,26 +210,43 @@ def chialo(merged_df):
             # Thêm mẻ còn lại (nếu có)
             if remainder > 0:
                 lot_splits.append({
-                    'stt' : index,
+                    'X' : index,
+                    'X0' : thitruong,
+                    'X1': code,
+                    'X4': remainder,
+                    'X7': maukbd,
+                    'X8': maueog,
+                    'X9': maukhac,
+                    'Y0': chungloai,
+                    'Y1': max_lot_size,
+                    'Y2'   : maxmett,
+                    'Y3': mautinhnang,
+                    'Y4': mauchietxuat,
+                    'Y5': maunhatban,
+                    'Y6': mauluutvc,
+                    'Y7'   : maxpalet,
                     'solot': i + 1,
-                    'thitruong' : thitruong,
-                    'mathanhpham': code,
-                    'chungloai': chungloai,
-                    'soluonglot': remainder,
-                    'maxlot': max_lot_size,
-                    'tongsoluongsx': total_qty,
-                    'maxmett'   : maxmett,
-                    'maxpalet'   : maxpalet,
-                    'maukbd': maukbd,
-                    'maueog': maueog,
-                    'maukhac': maukhac,
-                    'mautinhnang': mautinhnang,
-                    'mauchietxuat': mauchietxuat,
-                    'maunhatban': maunhatban,
-                    'mauluutvc': mauluutvc,
-                    'mauedotoxin': tinhmau(remainder,maukbd,mauchietxuat,mautinhnang,maueog,maukhac),
-                    'tongmau': tinhmau(remainder,maukbd,mauchietxuat,mautinhnang,maueog,maukhac) + maukbd + maueog + maukhac + mautinhnang + mauchietxuat + maunhatban + mauluutvc,
-                    'tongsanxuat': remainder + (tinhmau(remainder,maukbd,mauchietxuat,mautinhnang,maueog,maukhac) + maukbd + maueog + maukhac + mautinhnang + mauchietxuat + maunhatban + mauluutvc)
+                    'tongsx': total_qty
+                    # 'stt' : index,
+                    # 'thitruong' : thitruong,
+                    # 'mathanhpham': code,
+                    # 'chungloai': chungloai,
+                    # 'soluonglot': remainder,
+                    # 'maxlot': max_lot_size,
+                    # 'tongsoluongsx': total_qty,
+                    # 'maxmett'   : maxmett,
+                    # 'maxpalet'   : maxpalet,
+                    # 'maukbd': maukbd,
+                    # 'maueog': maueog,
+                    # 'maukhac': maukhac,
+                    # 'mautinhnang': mautinhnang,
+                    # 'mauchietxuat': mauchietxuat,
+                    # 'maunhatban': maunhatban,
+                    # 'mauluutvc': mauluutvc,
+                    # 'solot': i + 1,
+                    # 'mauedotoxin': tinhmau(remainder,maukbd,mauchietxuat,mautinhnang,maueog,maukhac),
+                    # 'tongmau': tinhmau(remainder,maukbd,mauchietxuat,mautinhnang,maueog,maukhac) + maukbd + maueog + maukhac + mautinhnang + mauchietxuat + maunhatban + mauluutvc,
+                    # 'tongsanxuat': remainder + (tinhmau(remainder,maukbd,mauchietxuat,mautinhnang,maueog,maukhac) + maukbd + maueog + maukhac + mautinhnang + mauchietxuat + maunhatban + mauluutvc)
 
                     
                     # 'stt' : index,
@@ -253,9 +271,9 @@ def chialo(merged_df):
         
         # Tạo DataFrame từ kết quả chia mẻ
         df_lot_splits = pd.DataFrame(lot_splits)
-        df_lot_splits["INDEX"] = range(1, len(df_lot_splits) + 1)
-        df_lot_splits['lot_id'] = df_lot_splits['INDEX'].astype(str) + df_lot_splits['stt'].astype(str) + df_lot_splits['solot'].astype(str)
-        df_lot_splits['chiempalett'] = round(df_lot_splits['tongsanxuat'] / df_lot_splits['maxpalet'],2)
+        # df_lot_splits["INDEX"] = range(1, len(df_lot_splits) + 1)
+        # df_lot_splits['lot_id'] = df_lot_splits['INDEX'].astype(str) + df_lot_splits['stt'].astype(str) + df_lot_splits['solot'].astype(str)
+        # df_lot_splits['chiempalett'] = round(df_lot_splits['tongsanxuat'] / df_lot_splits['maxpalet'],2)
         
 
         # Hiển thị kết quả chia mẻ
@@ -267,12 +285,34 @@ def chialo(merged_df):
 
         # Lưu kết quả chia mẻ vào sheet Lot Splits
         with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-            df_lot_splits.to_excel(writer, sheet_name='CHIA LÔ', index=False)
-        print("\nĐã lưu kết quả chia mẻ vào sheet 'CHIA LÔ' trong file", file_path)
+            df_lot_splits.to_excel(writer, sheet_name='chialo', index=False)
+        print("\nĐã lưu kết quả chia mẻ vào sheet 'chialo' trong file", file_path)
         return df_lot_splits
+# tinhmau(remainder,mkbd,chietxuat,mautinhnang,meog,maukhac),
 
-def geme_theodata(df_lot_splits):
-    ...
+def tinhmau(data):
+    df_plan = data.copy()
+    # Áp dụng hàm cho từng hàng của df_plan
+    df_plan['mauedotoxin'] = df_plan.apply(
+        lambda row: tinhmau_edotoxin(
+            row['X4'],  # max_lot_size
+            row['X7'],  # mkbd
+            row['Y4'],  # chietxuat
+            row['Y3'],  # mautinhnang
+            row['X8'],  # meog
+            row['X9']   # maukhac
+        ),
+        axis=1
+    )
+    
+    # tính tổng mẫu, và tổng sản xuất
+    df_plan['tongmau'] = df_plan['X7'] + df_plan['X8'] + df_plan['X9'] + df_plan['Y3'] + df_plan['Y4'] + df_plan['Y5'] + df_plan['Y6'] + df_plan['mauedotoxin']
+    df_plan['tongsanxuat'] = df_plan['tongmau'] + df_plan['X4']
+    # tỉ lệ max mẻ:
+    df_plan['tilechiemlot'] = round((df_plan['tongsanxuat'] / df_plan['Y1']) * 100, 2)
+    return df_plan
+    
+    
 
 def gopme(df_lot_splits):
     # # In kết quả
@@ -315,6 +355,25 @@ def gopme(df_lot_splits):
         df_combined.to_excel(writer, sheet_name='gepme', index=False)
     print("\nĐã lưu kết quả chia mẻ vào sheet 'gepme' trong file", file_path)
     
+def khongchialo_func(khongchialo):
+    # xu ly bang khong chia lo
+    khongchialo['solot'] = '0'
+    khongchialo['tongsx'] = khongchialo['X4']
+    khongchialo = khongchialo.drop('Y', axis= 1)
+    
+    tinhmaudone = tinhmau(khongchialo)
+     # Lưu kết quả chia mẻ vào sheet khongchialo
+    with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        tinhmaudone.to_excel(writer, sheet_name='tinhma_khongchialo', index=False)
+
+
+def phaichialo_func(phaichialo):
+    # chia lô
+    chialodone  = chialo(phaichialo)
+    # tính mẫu
+    tinhmaudone = tinhmau(chialodone)
+    with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        tinhmaudone.to_excel(writer, sheet_name='tinhmau', index=False)
 
 
 # Đọc dữ liệu từ file Excel
@@ -323,22 +382,5 @@ data1 = read_excel_to_df(file_path)
 khongchialo = data1[data1['X4'] < data1['Y1']].copy()
 phaichialo = data1[data1['X4'] >  data1['Y1']].copy()
 
-
- # Lưu kết quả chia mẻ vào sheet khongchialo
-with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-    khongchialo.to_excel(writer, sheet_name='khongchialo', index=False)
-
-# những item cần chia lô:
-
- # Lưu kết quả chia mẻ vào sheet khongchialo
-with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-    phaichialo.to_excel(writer, sheet_name='canchialo', index=False)
-
-
-
-
-
-data2  = chialo(phaichialo)
-# tách mẫu ra khỏi mẻ:
-# gopme(data2)
-
+khongchialo_func(khongchialo)
+phaichialo_func(phaichialo)
