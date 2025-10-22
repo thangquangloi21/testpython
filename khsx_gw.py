@@ -430,6 +430,8 @@ def laylot(df, bom, inventory):
         # lấy tồn kho của wip theo item
         tonkho = laytonkho(itemcode, bom, inventory)
         # Chuyển cột ngayhethan thành định dạng datetime
+
+        print(tonkho)
         if (len(tonkho) == 0):
             pass
         else:
@@ -437,10 +439,52 @@ def laylot(df, bom, inventory):
             for _, row1 in tonkho.iterrows():
                 # print(row['stt'], row['masanpham'], row['solo'], row['soluong'], row['ngayhethan'], row['ngaypass'], row['kieu'])
                 # print(f"tongsanxuat truoc khi tru {tongsanxuat}")
-                tongsanxuat = tongsanxuat - row1['soluong']
-                print(f"tongsanxuat sau khi tru {tongsanxuat}")
-                # lotrm.append(row)
-    # print(lotrm)
+                
+                wipitem = row1['masanpham']
+                wiplot = row1['solo']
+                wipsoluong = row1['soluong']
+                ngayhethan = row1['ngayhethan']
+                ngaypass = row1['ngaypass']
+                kieu = row1['kieu']
+                # print(f"tongsanxuat {itemcode} sau khi tru {tongsanxuat}")
+                soconlai = tongsanxuat - wipsoluong
+                # wipsoluong = wipsoluong - wipsoluong
+                # xóa sau khi lấy
+                inventory = inventory.drop(inventory[(inventory['masanpham'] == wipitem) & (inventory['solo'] == wiplot)].index)
+                lotrm.append(
+                    {
+                        'itemncode': itemcode,
+                        'lotnumber': lotnumber,
+                        'tongsanxuat': tongsanxuat,
+                        'soluonglay': wipsoluong,
+                        'soconlai': soconlai,
+                        'wipitem': wipitem,
+                        'wiplot': wiplot,
+                        'wipsoluong': wipsoluong,
+                        'ngayhethan': ngayhethan,
+                        'ngaypass': ngaypass,
+                        'kieu': kieu
+                    })
+                
+                if soconlai <= 0:
+                    lotrm.append(
+                    {
+                        'itemncode': itemcode,
+                        'lotnumber': lotnumber,
+                        'tongsanxuat': tongsanxuat,
+                        'soluonglay': wipsoluong - soconlai,
+                        'soconlai': soconlai,
+                        'wipitem': wipitem,
+                        'wiplot': wiplot,
+                        'wipsoluong': wipsoluong,
+                        'ngayhethan': ngayhethan,
+                        'ngaypass': ngaypass,
+                        'kieu': kieu
+                    }   
+                )
+                
+    return pd.DataFrame(lotrm),inventory
+
         
 
 # Đọc dữ liệu từ file Excel
@@ -449,18 +493,18 @@ data1 = read_excel_to_df(file_path)
 khongchialo = data1[data1['X4'] < data1['Y1']].copy()
 phaichialo = data1[data1['X4'] >  data1['Y1']].copy()
 
-# phaichialo_func(phaichialo)
+phaichialo = phaichialo_func(phaichialo)
 bom, inventory = load_bom_inven()
 
 khongchialo = khongchialo_func(khongchialo)
 
-laylot(khongchialo, bom, inventory)
 
-# tonkho1 = laytonkho("RG80GA35153Y", bom, inventory)
+geplot,inventory = laylot(phaichialo, bom, inventory)
 
-# for i, (_, row) in enumerate(tonkho1.iterrows()):
-#     if i >= 10:  # Dừng sau khi in 10 dòng
-#         break
-#     print(f"bat dau {i}")
-#     print(row)
+
+with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        geplot.to_excel(writer, sheet_name='test1', index=False)
+
+with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        inventory.to_excel(writer, sheet_name='inventory_upd', index=False)
 
