@@ -5,6 +5,7 @@ from itertools import combinations
 
 # Đường dẫn đến file Excel
 file_path = 'Master_GW.xlsx'  # Cập nhật nếu file ở nơi khác, ví dụ: r'D:\4.DEV\TEST_python\MasterIK.xlsx'
+file_path1 = 'inventory.xlsx'
 
 # tính mẫu:
 def tinhmau_edotoxin(max_lot_size,mkbd,chietxuat,mautinhnang,meog,maukhac):
@@ -159,7 +160,7 @@ def chialo(merged_df):
             maunhatban = row['Y5']
             mauluutvc = row['Y6']
             maxpalet = row['Y7']
-            print(chungloai)
+            # print(chungloai)
 
             # Tính số mẻ đầy đủ và số lượng còn lại
             full_lots = total_qty // max_lot_size
@@ -308,10 +309,11 @@ def tinhmau(data):
     # tính tổng mẫu, và tổng sản xuất
     df_plan['tongmau'] = df_plan['X7'] + df_plan['X8'] + df_plan['X9'] + df_plan['Y3'] + df_plan['Y4'] + df_plan['Y5'] + df_plan['Y6'] + df_plan['mauedotoxin']
     df_plan['tongsanxuat'] = df_plan['tongmau'] + df_plan['X4']
+    df_plan['lot_number'] = ['LOT{}'.format(i) for i in range(1, len(df_plan) + 1)]
+    # df_plan['danhsolo'] = df_plan.index + 1
     # tỉ lệ max mẻ:
     df_plan['tilechiemlot'] = round((df_plan['tongsanxuat'] / df_plan['Y1']) * 100, 2)
     return df_plan
-    
     
 
 def gopme(df_lot_splits):
@@ -364,7 +366,8 @@ def khongchialo_func(khongchialo):
     tinhmaudone = tinhmau(khongchialo)
      # Lưu kết quả chia mẻ vào sheet khongchialo
     with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        tinhmaudone.to_excel(writer, sheet_name='tinhma_khongchialo', index=False)
+        tinhmaudone.to_excel(writer, sheet_name='tinhmau_khongchialo', index=False)
+    return tinhmaudone
 
 
 def phaichialo_func(phaichialo):
@@ -374,7 +377,71 @@ def phaichialo_func(phaichialo):
     tinhmaudone = tinhmau(chialodone)
     with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         tinhmaudone.to_excel(writer, sheet_name='tinhmau', index=False)
+    
+    return tinhmaudone
 
+
+        
+       
+       
+       
+       
+def show_(iventory):
+    if not iventory.empty:
+        print("Dữ liệu từ sheet TEMP (từ A4 đến D4 và các hàng tiếp theo):")
+        print(iventory.head())
+        print("\nTên cột của TEMP:", iventory.columns.tolist())
+    else:
+        print("Không có dữ liệu trong sheet TEMP.")
+        
+def laytonkho(item,bom, inventory):
+    # lấy item con của mã
+    get = bom['component'][bom['item'] == item]
+    # print(get)
+    
+    # kiểm tra tồn của sản phẩm
+    inven = inventory[inventory['masanpham'].isin(get)]
+    # print(inven)
+    # print(len(inven))
+    tonkho = inven.copy()  # Tạo bản sao độc lập
+    tonkho['ngayhethan'] = pd.to_datetime(tonkho['ngayhethan'], format='%d/%m/%Y')
+    # Sắp xếp DataFrame theo cột ngayhethan, giảm dần (ngày gần nhất trước)
+    tonkho = tonkho.sort_values(by='ngayhethan', ascending=True)
+    return tonkho #trả về lượng tồn của sản phẩm
+
+
+def load_bom_inven():
+    
+    inventory = pd.read_excel(file_path1, sheet_name='inventory', header=0, usecols='A:G')
+    bom = pd.read_excel(file_path1, sheet_name='BOM', header=0, usecols='A:C')
+    # lấy dữ liệu tồn và bom
+    return bom, inventory
+    
+    
+def laylot(df, bom, inventory):
+    lotrm = []
+    tonkho = []
+    for _, row in df.iterrows():
+        itemcode = row['X1']
+        lotnumber = row['lot_number']
+        tongsanxuat = row['tongsanxuat']
+        get = bom['component'][bom['item'] == itemcode]
+        # print(f"{itemcode} + {lotnumber} + {tongsanxuat} + {get}")
+        # lấy tồn kho của wip theo item
+        tonkho = laytonkho(itemcode, bom, inventory)
+        # Chuyển cột ngayhethan thành định dạng datetime
+        if (len(tonkho) == 0):
+            pass
+        else:
+            # Lặp qua các hàng của tonkho
+            for _, row1 in tonkho.iterrows():
+                # print(row['stt'], row['masanpham'], row['solo'], row['soluong'], row['ngayhethan'], row['ngaypass'], row['kieu'])
+                # print(f"tongsanxuat truoc khi tru {tongsanxuat}")
+                tongsanxuat = tongsanxuat - row1['soluong']
+                print(f"tongsanxuat sau khi tru {tongsanxuat}")
+                # lotrm.append(row)
+    # print(lotrm)
+        
 
 # Đọc dữ liệu từ file Excel
 data1 = read_excel_to_df(file_path)
@@ -382,5 +449,18 @@ data1 = read_excel_to_df(file_path)
 khongchialo = data1[data1['X4'] < data1['Y1']].copy()
 phaichialo = data1[data1['X4'] >  data1['Y1']].copy()
 
-khongchialo_func(khongchialo)
-phaichialo_func(phaichialo)
+# phaichialo_func(phaichialo)
+bom, inventory = load_bom_inven()
+
+khongchialo = khongchialo_func(khongchialo)
+
+laylot(khongchialo, bom, inventory)
+
+# tonkho1 = laytonkho("RG80GA35153Y", bom, inventory)
+
+# for i, (_, row) in enumerate(tonkho1.iterrows()):
+#     if i >= 10:  # Dừng sau khi in 10 dòng
+#         break
+#     print(f"bat dau {i}")
+#     print(row)
+
