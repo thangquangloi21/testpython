@@ -88,7 +88,7 @@ def create_batches(df, tray,max_slpalet):
 
 def read_excel_to_df(file_path):
      # Đọc sheet 'TEMP', từ hàng 4 (header ở index 3), cột A đến D
-    df_temp = pd.read_excel(file_path, sheet_name='INPUT1', header=1, usecols='A:G')
+    df_temp = pd.read_excel(file_path, sheet_name='INPUT1', header=1, usecols='A:H')
     
     # Hiển thị dữ liệu từ sheet TEMP
     if not df_temp.empty:
@@ -148,6 +148,7 @@ def chialo(merged_df):
             # rm = row['X3']
             # date = row['X5']
             # pass_rm = row['X6']
+            wip = row['X3']
             total_qty = int(row['X4'])
             maukbd = row['X7']
             maueog = row['X8']
@@ -172,6 +173,7 @@ def chialo(merged_df):
                     'X' : index,
                     'X0' : thitruong,
                     'X1': code,
+                    'X3': wip,
                     'X4': max_lot_size,
                     'X7': maukbd,
                     'X8': maueog,
@@ -214,6 +216,7 @@ def chialo(merged_df):
                     'X' : index,
                     'X0' : thitruong,
                     'X1': code,
+                    'X3': wip,
                     'X4': remainder,
                     'X7': maukbd,
                     'X8': maueog,
@@ -309,7 +312,8 @@ def tinhmau(data):
     # tính tổng mẫu, và tổng sản xuất
     df_plan['tongmau'] = df_plan['X7'] + df_plan['X8'] + df_plan['X9'] + df_plan['Y3'] + df_plan['Y4'] + df_plan['Y5'] + df_plan['Y6'] + df_plan['mauedotoxin']
     df_plan['tongsanxuat'] = df_plan['tongmau'] + df_plan['X4']
-    df_plan['lot_number'] = ['LOT{}'.format(i) for i in range(1, len(df_plan) + 1)]
+    
+    
     # df_plan['danhsolo'] = df_plan.index + 1
     # tỉ lệ max mẻ:
     df_plan['tilechiemlot'] = round((df_plan['tongsanxuat'] / df_plan['Y1']) * 100, 2)
@@ -362,8 +366,8 @@ def khongchialo_func(khongchialo):
     khongchialo['solot'] = '0'
     khongchialo['tongsx'] = khongchialo['X4']
     khongchialo = khongchialo.drop('Y', axis= 1)
-    
     tinhmaudone = tinhmau(khongchialo)
+    tinhmaudone['lot_number'] = ['LOT{}'.format(i) for i in range(1, len(tinhmaudone) + 1)]
      # Lưu kết quả chia mẻ vào sheet khongchialo
     with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         tinhmaudone.to_excel(writer, sheet_name='tinhmau_khongchialo', index=False)
@@ -375,6 +379,7 @@ def phaichialo_func(phaichialo):
     chialodone  = chialo(phaichialo)
     # tính mẫu
     tinhmaudone = tinhmau(chialodone)
+    tinhmaudone['lot_number'] = ['LOTS{}'.format(i) for i in range(1, len(tinhmaudone) + 1)]
     with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         tinhmaudone.to_excel(writer, sheet_name='tinhmau', index=False)
     
@@ -420,10 +425,10 @@ def load_bom_inven():
     
 def laylot(df, bom, inventory):
     lotrm = []
-    tonkho = []
     for _, row in df.iterrows():
         itemcode = row['X1']
         lotnumber = row['lot_number']
+        wip = row['X3']
         tongsanxuat = row['tongsanxuat']
         get = bom['component'][bom['item'] == itemcode]
         # print(f"{itemcode} + {lotnumber} + {tongsanxuat} + {get}")
@@ -439,7 +444,7 @@ def laylot(df, bom, inventory):
             for _, row1 in tonkho.iterrows():
                 # print(row['stt'], row['masanpham'], row['solo'], row['soluong'], row['ngayhethan'], row['ngaypass'], row['kieu'])
                 # print(f"tongsanxuat truoc khi tru {tongsanxuat}")
-                
+                # tonkho = laytonkho(itemcode, bom, inventory)
                 wipitem = row1['masanpham']
                 wiplot = row1['solo']
                 wipsoluong = row1['soluong']
@@ -448,44 +453,62 @@ def laylot(df, bom, inventory):
                 kieu = row1['kieu']
                 # print(f"tongsanxuat {itemcode} sau khi tru {tongsanxuat}")
                 soconlai = tongsanxuat - wipsoluong
+                tonkhodu = tongsanxuat % wipsoluong
                 # wipsoluong = wipsoluong - wipsoluong
                 # xóa sau khi lấy
-                inventory = inventory.drop(inventory[(inventory['masanpham'] == wipitem) & (inventory['solo'] == wiplot)].index)
-                lotrm.append(
-                    {
-                        'itemncode': itemcode,
-                        'lotnumber': lotnumber,
-                        'tongsanxuat': tongsanxuat,
-                        'soluonglay': wipsoluong,
-                        'soconlai': soconlai,
-                        'wipitem': wipitem,
-                        'wiplot': wiplot,
-                        'wipsoluong': wipsoluong,
-                        'ngayhethan': ngayhethan,
-                        'ngaypass': ngaypass,
-                        'kieu': kieu
-                    })
+                if soconlai > 0:
+                    lotrm.append(
+                        {
+                            'itemncode': itemcode,
+                            'lotnumber': lotnumber,
+                            'banthanhpham': wip,
+                            'tongsanxuat': tongsanxuat,
+                            'soluongsudung': wipsoluong,
+                            'soconlai': soconlai,
+                            'wipitem': wipitem,
+                            'wiplot': wiplot,
+                            'tonkho': wipsoluong,
+                            'ngayhethan': ngayhethan,
+                            'ngaypass': ngaypass,
+                            'kieu': kieu
+                        })
+                    # xong thì xóa khỏi df
+                    inventory = inventory.drop(inventory[(inventory['masanpham'] == wipitem) & (inventory['solo'] == wiplot)].index)
                 
                 if soconlai <= 0:
                     lotrm.append(
                     {
                         'itemncode': itemcode,
                         'lotnumber': lotnumber,
+                        'banthanhpham': wip,
                         'tongsanxuat': tongsanxuat,
-                        'soluonglay': wipsoluong - soconlai,
-                        'soconlai': soconlai,
+                        'soluongsudung': tonkhodu,
+                        'soconlai': tongsanxuat - tonkhodu,
                         'wipitem': wipitem,
                         'wiplot': wiplot,
-                        'wipsoluong': wipsoluong,
+                        'tonkho': wipsoluong,
                         'ngayhethan': ngayhethan,
                         'ngaypass': ngaypass,
                         'kieu': kieu
-                    }   
-                )
-                
+                    })
+                    # cập nhật tồn vào inventory
+                    inventory.loc[(inventory['masanpham'] == wipitem) & (inventory['solo'] == wiplot), 'soluong'] = wipsoluong - tonkhodu
+                    
     return pd.DataFrame(lotrm),inventory
 
         
+def get_wip(df, bom, inventory):
+    getwip = []
+    for _, row in df.iterrows():
+        itemcode = row['X1']
+        lotnumber = row['lot_number']
+        wip = row['X3']
+        tongsanxuat = row['tongsanxuat']
+        get = bom['component'][bom['item'] == itemcode]
+        
+        
+        
+
 
 # Đọc dữ liệu từ file Excel
 data1 = read_excel_to_df(file_path)
@@ -494,12 +517,19 @@ khongchialo = data1[data1['X4'] < data1['Y1']].copy()
 phaichialo = data1[data1['X4'] >  data1['Y1']].copy()
 
 phaichialo = phaichialo_func(phaichialo)
+khongchialo = khongchialo_func(khongchialo)
 bom, inventory = load_bom_inven()
 
-khongchialo = khongchialo_func(khongchialo)
+dfs = [phaichialo, khongchialo]
+gopdata = pd.concat(dfs, ignore_index=True)
+
+# geplot,inventory = laylot(gopdata, bom, inventory)
+
+get_wip(gopdata, bom, inventory)
 
 
-geplot,inventory = laylot(phaichialo, bom, inventory)
+with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        gopdata.to_excel(writer, sheet_name='gopdata', index=False)
 
 
 with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
