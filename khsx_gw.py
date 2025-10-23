@@ -90,25 +90,25 @@ def read_excel_to_df(file_path):
      # Đọc sheet 'TEMP', từ hàng 4 (header ở index 3), cột A đến D
     df_temp = pd.read_excel(file_path, sheet_name='INPUT1', header=1, usecols='A:H')
     
-    # Hiển thị dữ liệu từ sheet TEMP
-    if not df_temp.empty:
-        print("Dữ liệu từ sheet TEMP (từ A4 đến D4 và các hàng tiếp theo):")
-        print(df_temp.head())
-        print("\nTên cột của TEMP:", df_temp.columns.tolist())
-    else:
-        print("Không có dữ liệu trong sheet TEMP.")
+    # # Hiển thị dữ liệu từ sheet TEMP
+    # if not df_temp.empty:
+    #     print("Dữ liệu từ sheet TEMP (từ A4 đến D4 và các hàng tiếp theo):")
+    #     print(df_temp.head())
+    #     print("\nTên cột của TEMP:", df_temp.columns.tolist())
+    # else:
+    #     print("Không có dữ liệu trong sheet TEMP.")
 
 
     # Đọc sheet 'MASTER', từ hàng 1 (header ở index 0), cột A đến G
     df_master = pd.read_excel(file_path, sheet_name='MASTER_GW', header=1, usecols='A:I')
     
-    # Hiển thị dữ liệu từ sheet MASTER
-    if not df_master.empty:
-        print("\nDữ liệu từ sheet MASTER (từ A1 đến G1 và các hàng tiếp theo):")
-        print(df_master.head())
-        print("\nTên cột của MASTER:", df_master.columns.tolist())
-    else:
-        print("Không có dữ liệu trong sheet MASTER.")
+    # # Hiển thị dữ liệu từ sheet MASTER
+    # if not df_master.empty:
+    #     print("\nDữ liệu từ sheet MASTER (từ A1 đến G1 và các hàng tiếp theo):")
+    #     print(df_master.head())
+    #     print("\nTên cột của MASTER:", df_master.columns.tolist())
+    # else:
+    #     print("Không có dữ liệu trong sheet MASTER.")
 
     merged_df = pd.merge(
     df_temp,
@@ -118,12 +118,12 @@ def read_excel_to_df(file_path):
     right_on=['Y'])
 
 
-    # Hiển thị dữ liệu sau khi gộp
-    if not merged_df.empty:
-        print("\nDữ liệu sau khi gộp (left join dựa trên cột B):")
-        print(merged_df.head())
-    else:
-        print("\nKhông có dữ liệu sau khi gộp.")
+    # # Hiển thị dữ liệu sau khi gộp
+    # if not merged_df.empty:
+    #     print("\nDữ liệu sau khi gộp (left join dựa trên cột B):")
+    #     print(merged_df.head())
+    # else:
+    #     print("\nKhông có dữ liệu sau khi gộp.")
     
     # Lưu kết quả chia mẻ vào sheet Lot Splits
     with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
@@ -280,12 +280,12 @@ def chialo(merged_df):
         # df_lot_splits['chiempalett'] = round(df_lot_splits['tongsanxuat'] / df_lot_splits['maxpalet'],2)
         
 
-        # Hiển thị kết quả chia mẻ
-        if not df_lot_splits.empty:
-            print("\nKết quả chia mẻ theo cỡ lô max:")
-            print(df_lot_splits)
-        else:
-            print("\nKhông có mẻ nào được chia.")
+        # # Hiển thị kết quả chia mẻ
+        # if not df_lot_splits.empty:
+        #     print("\nKết quả chia mẻ theo cỡ lô max:")
+        #     print(df_lot_splits)
+        # else:
+        #     print("\nKhông có mẻ nào được chia.")
 
         # Lưu kết quả chia mẻ vào sheet Lot Splits
         with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
@@ -402,12 +402,13 @@ def show_(iventory):
 def laytonkho(item,bom, inventory):
     # lấy item con của mã
     get = bom['component'][bom['item'] == item]
-    # print(get)
+    print(get)
     
     # kiểm tra tồn của sản phẩm
     inven = inventory[inventory['masanpham'].isin(get)]
     # print(inven)
     # print(len(inven))
+    
     tonkho = inven.copy()  # Tạo bản sao độc lập
     tonkho['ngayhethan'] = pd.to_datetime(tonkho['ngayhethan'], format='%d/%m/%Y')
     # Sắp xếp DataFrame theo cột ngayhethan, giảm dần (ngày gần nhất trước)
@@ -426,10 +427,12 @@ def load_bom_inven():
 def laylot(df, bom, inventory):
     lotrm = []
     for _, row in df.iterrows():
-        itemcode = row['X1']
+        itemcode = row['itemncode']
         lotnumber = row['lot_number']
-        wip = row['X3']
+        wip = row['banthanhpham']
         tongsanxuat = row['tongsanxuat']
+        wipdalay = row['soluonglay']
+        soconlai = row['soconlai']
         get = bom['component'][bom['item'] == itemcode]
         # print(f"{itemcode} + {lotnumber} + {tongsanxuat} + {get}")
         # lấy tồn kho của wip theo item
@@ -496,18 +499,187 @@ def laylot(df, bom, inventory):
                     
     return pd.DataFrame(lotrm),inventory
 
-        
+# lấy ngày hết hạn của btp
+import pandas as pd
+
 def get_wip(df, bom, inventory):
-    getwip = []
-    for _, row in df.iterrows():
-        itemcode = row['X1']
-        lotnumber = row['lot_number']
-        wip = row['X3']
-        tongsanxuat = row['tongsanxuat']
-        get = bom['component'][bom['item'] == itemcode]
+    """
+    - Duyệt từng dòng nhu cầu (df): lấy BTP 'wip' và số lượng 'tongsanxuat'
+    - Lấy tồn của 'wip' trong inventory theo FEFO (ngày hết hạn sớm trước)
+    - Xuất các dòng đã lấy (mỗi lô một dòng), đồng thời cập nhật inventory:
+        * Nếu lấy hết lô: drop lô khỏi inventory
+        * Nếu lấy một phần: giảm 'soluong' của lô đó
+    Trả về:
+        (DataFrame kết quả, inventory đã cập nhật)
+    """
+    out_rows = []
+
+    # ✅ Khuyến nghị: parse ngày 1 lần trước khi gọi hàm (nhanh hơn)
+    # Nhưng nếu cần parse ở đây, dùng .loc trên inventory để tránh cảnh báo
+    if inventory['ngayhethan'].dtype == object:
+        inventory = inventory.copy()
+        inventory.loc[:, 'ngayhethan'] = pd.to_datetime(
+            inventory['ngayhethan'], format='%d/%m/%Y', errors='coerce'
+        )
+
+    for _, r in df.iterrows():
+        itemcode    = r['X1']
+        lotnumber   = r['lot_number']
+        wip         = r['X3']              # mã bán thành phẩm cần dùng
+        demand      = int(r['tongsanxuat'])  # nhu cầu cần lấy
+
+        # Lấy các lô tồn của đúng mã BTP, sort FEFO (hết hạn sớm trước)
+        inven = inventory.loc[inventory['masanpham'] == wip, :].copy()
+        if inven.empty:
+            # Không có tồn để cấp
+            out_rows.append({
+                'itemncode': itemcode,
+                'lotnumber': lotnumber,
+                'banthanhpham': wip,
+                'tongsanxuat': demand,
+                'soluonglay': 0,
+                'soconlai': demand,
+                'wiplot': '',
+                'ngayhethan': pd.NaT,
+                'ngaypass': '',
+                'kieu': 'WIP'
+            })
+            continue
+
+        inven = inven.sort_values(by='ngayhethan', ascending=True)  # FEFO
+
+        remaining = demand
+        for _, inv in inven.iterrows():
+            if remaining <= 0:
+                break
+
+            wipitem     = inv['masanpham']
+            wiplot      = inv['solo']
+            lot_qty     = int(inv['soluong'])
+            ngayhethan  = inv['ngayhethan']
+            ngaypass    = inv.get('ngaypass', '')
+            kieu        = inv.get('kieu', 'WIP')
+
+            take = min(remaining, lot_qty)   # ✅ số lấy thực sự từ lô này
+            remaining_after = remaining - take
+
+            out_rows.append({
+                'itemncode': itemcode,
+                'lotnumber': lotnumber,
+                'banthanhpham': wip,
+                'tongsanxuat': demand,
+                'soluonglay': take,
+                'soconlai': remaining_after,
+                'wiplot': wiplot,
+                'ngayhethan': ngayhethan,
+                'ngaypass': ngaypass,
+                'kieu': kieu
+            })
+
+            # ✅ Cập nhật inventory bằng .loc để tránh SettingWithCopyWarning
+            mask = (inventory['masanpham'] == wipitem) & (inventory['solo'] == wiplot)
+            if take == lot_qty:
+                # Lấy hết lô → drop hàng đó
+                inventory = inventory.drop(index=inventory.loc[mask].index)
+            else:
+                # Lấy một phần → giảm số lượng
+                inventory.loc[mask, 'soluong'] = lot_qty - take
+
+            remaining = remaining_after
+
+        # # Nếu vẫn thiếu sau khi đi hết các lô
+        # if remaining > 0:
+        #     out_rows.append({
+        #         'itemncode': itemcode,
+        #         'lotnumber': lotnumber,
+        #         'banthanhpham': wip,
+        #         'tongsanxuat': demand,
+        #         'soluonglay': 0,
+        #         'soconlai': remaining,
+        #         'wiplot': '',
+        #         'ngayhethan': pd.NaT,
+        #         'ngaypass': '',
+        #         'kieu': 'WIP'
+        #     })
+
+    return pd.DataFrame(out_rows), inventory
+
+
+# def get_wip(df, bom, inventory):
+#     getwip = []
+#     for _, row in df.iterrows():
+#         itemcode = row['X1']
+#         lotnumber = row['lot_number']
+#         wip = row['X3']
+#         tongsanxuat = row['tongsanxuat']
+#         # kiểm tra xem tồn của btp có đủ không
+#         inven = inventory[inventory['masanpham'] == wip]
+#         # xếp tồn theo ngày hết hạn
+#         inven = inven.copy()  # Tạo bản sao độc lập
+#         inven['ngayhethan'] = pd.to_datetime(inven['ngayhethan'], format='%d/%m/%Y')
+#         # Sắp xếp DataFrame theo cột ngayhethan, giảm dần (ngày gần nhất trước)
+#         inven = inven.sort_values(by='ngayhethan', ascending=True)
+
+#         if (len(inven) == 0):
+#             getwip.append(
+#                 {
+#                     'itemncode': itemcode,
+#                         'lotnumber': lotnumber,
+#                         'banthanhpham': wip,
+#                         'tongsanxuat': tongsanxuat,
+#                         'soluonglay': '0',
+#                         'soconlai': tongsanxuat,
+#                         'wiplot': '',
+#                         'ngayhethan': '',
+#                         'ngaypass': '',
+#                         'kieu': 'WIP'
+#                 })
+#             pass
         
-        
-        
+#         for _, row1 in inven.iterrows():
+#             wipitem = row1['masanpham']
+#             wiplot = row1['solo']
+#             wipsoluong = row1['soluong']
+#             ngayhethan = row1['ngayhethan']
+#             ngaypass = row1['ngaypass']
+#             kieu = row1['kieu']
+#             # print(f"tongsanxuat {itemcode} sau khi tru {tongsanxuat}")
+#             soconlai = tongsanxuat - wipsoluong
+#             tonkhodu = tongsanxuat % wipsoluong
+#             if soconlai > 0:
+#                 getwip.append(
+#                     {
+#                         'itemncode': itemcode,
+#                         'lotnumber': lotnumber,
+#                         'banthanhpham': wip,
+#                         'tongsanxuat': tongsanxuat,
+#                         'soluonglay': wipsoluong,
+#                         'soconlai': soconlai,
+#                         'wiplot': wiplot,
+#                         'ngayhethan': ngayhethan,
+#                         'ngaypass': ngaypass,
+#                         'kieu': kieu
+#                     })
+#                 inventory = inventory.drop(inventory[(inventory['masanpham'] == wipitem) & (inventory['solo'] == wiplot)].index)
+                
+#             elif soconlai <= 0:
+#                 getwip.append(
+#                 {
+#                     'itemncode': itemcode,
+#                     'lotnumber': lotnumber,
+#                     'banthanhpham': wip,
+#                     'tongsanxuat': tongsanxuat,
+#                     'soluonglay': tonkhodu,
+#                     'soconlai': tongsanxuat - tonkhodu,
+#                     'wiplot': wiplot,
+#                     'ngayhethan': ngayhethan,
+#                     'ngaypass': ngaypass,
+#                     'kieu': kieu
+#                 })
+#                 # cập nhật tồn vào inventory
+#                 inventory.loc[(inventory['masanpham'] == wipitem) & (inventory['solo'] == wiplot), 'soluong'] = wipsoluong - tonkhodu
+    
+#     return pd.DataFrame(getwip),inventory
 
 
 # Đọc dữ liệu từ file Excel
@@ -516,25 +688,43 @@ data1 = read_excel_to_df(file_path)
 khongchialo = data1[data1['X4'] < data1['Y1']].copy()
 phaichialo = data1[data1['X4'] >  data1['Y1']].copy()
 
+# tính mẫu của phaichialo và khongchialo
 phaichialo = phaichialo_func(phaichialo)
 khongchialo = khongchialo_func(khongchialo)
+
+# load bom và inventory
 bom, inventory = load_bom_inven()
 
+# gộp dữ liệu lại
 dfs = [phaichialo, khongchialo]
 gopdata = pd.concat(dfs, ignore_index=True)
 
-# geplot,inventory = laylot(gopdata, bom, inventory)
+#lấy tồn WIP và ngày hết hạn của wip
+datewip,inve = get_wip(gopdata, bom, inventory)
 
-get_wip(gopdata, bom, inventory)
+# lấy item theo bom rồi gắn vào df
+datewip = datewip.merge(bom[['item', 'component']], left_on='banthanhpham', right_on='item', how='left')
+# xóa cột item thừa
+datewip = datewip.drop('item', axis=1)
+
+
+print(datewip)
+# lấy thông tin rm
+
+geplot,inventory = laylot(datewip, bom, inve)
+
+
+with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        datewip.to_excel(writer, sheet_name='itemrm', index=False)
+
 
 
 with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
         gopdata.to_excel(writer, sheet_name='gopdata', index=False)
 
+with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+        datewip.to_excel(writer, sheet_name='datewip', index=False)
 
 with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        geplot.to_excel(writer, sheet_name='test1', index=False)
-
-with pd.ExcelWriter(file_path, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-        inventory.to_excel(writer, sheet_name='inventory_upd', index=False)
+        inve.to_excel(writer, sheet_name='inventory_update', index=False)
 
