@@ -58,13 +58,11 @@ STRING(pt_mstr.pt_part_type)SKIP.
 END.
 OUTPUT CLOSE.
 
-
 EOF
 '''
 
 stdin, stdout, stderr = ssh.exec_command(cmd)
 print(stderr.read().decode())
-
 sftp = ssh.open_sftp()
 sftp.get('/home/mfg/lad_det_export.csv', 'D:/4.DEV/TEST_python/lad_det_export.csv')
 sftp.get('/home/mfg/wod_det_export.csv', 'D:/4.DEV/TEST_python/wod_det_export.csv')
